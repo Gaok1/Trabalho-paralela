@@ -92,8 +92,10 @@ Os logs já gerados estão em `saidas/`:
 ---
 
 ## Descrição da aplicação
-A implementação do algoritmo K-means está disponível no repositório: https://github.com/TheAlgorithms/C/tree/master/machine_learning.;
-O grupo fez uma pequena adaptação para utilizar dados do csv e replicação de cálculo para extender o tempo de execução.;
+A implementação do algoritmo K-means está disponível no repositório: https://github.com/TheAlgorithms/C/tree/master/machine_learning.
+
+O grupo fez uma pequena adaptação para utilizar dados do csv e replicação de cálculo para extender o tempo de execução.
+
 Passos principais do algoritmo:
 1. Leitura do CSV `Instagram_visits_clustering.csv`;
 2. Construção do vetor de observações (`observation { x, y, group }`);
