@@ -92,14 +92,8 @@ Os logs já gerados estão em `saidas/`:
 ---
 
 ## Descrição da aplicação
-
-O algoritmo **K-Means** recebe um conjunto de pontos 2D:
-- `x` = Instagram visit score  
-- `y` = Spending_rank  
-
-e particiona esses pontos em `k` grupos (clusters), minimizando a distância
-dos pontos ao centróide de seu cluster.
-
+A implementação do algoritmo K-means está disponível no repositório: https://github.com/TheAlgorithms/C/tree/master/machine_learning.
+O grupo fez uma pequena adaptação para utilizar dados do csv e replicação de cálculo para extender o tempo de execução.
 Passos principais:
 1. Leitura do CSV `Instagram_visits_clustering.csv`;
 2. Construção do vetor de observações (`observation { x, y, group }`);
