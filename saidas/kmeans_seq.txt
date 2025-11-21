@@ -1,0 +1,11 @@
+K-Means sequencial (base replicada 1000 vezes, 30 execuções)
+
+Observações efetivas: 2600000, clusters: 5
+Tempo total (sequencial, 30 execuções): 13.517000 segundos
+Tempo médio por execução: 0.450567 segundos
+
+Cluster 0: centroid (89.2194, 19.9706), pontos=793000
+Cluster 1: centroid (29.8434, 42.1378), pontos=843000
+Cluster 2: centroid (58.4969, 19.2139), pontos=326000
+Cluster 3: centroid (-nan(ind), -nan(ind)), pontos=0
+Cluster 4: centroid (77.8401, 84.2998), pontos=638000

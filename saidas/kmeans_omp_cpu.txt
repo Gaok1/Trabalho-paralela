@@ -1,0 +1,8 @@
+K-Means OpenMP (CPU)
+Observações efetivas: 2600000, clusters: 5
+Threads:  1 -> tempo total (30 execuções): 11.206000 segundos, médio: 0.373533 segundos
+Threads:  2 -> tempo total (30 execuções): 9.549000 segundos, médio: 0.318300 segundos
+Threads:  4 -> tempo total (30 execuções): 6.390000 segundos, médio: 0.213000 segundos
+Threads:  8 -> tempo total (30 execuções): 5.365000 segundos, médio: 0.178833 segundos
+Threads: 16 -> tempo total (30 execuções): 5.820000 segundos, médio: 0.194000 segundos
+Threads: 32 -> tempo total (30 execuções): 5.321000 segundos, médio: 0.177367 segundos

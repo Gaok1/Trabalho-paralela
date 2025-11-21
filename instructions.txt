@@ -1,0 +1,35 @@
+O grupo (trio, dupla ou individual) deve implementar & paralelizar uma versão sequencial e uma versão paralela de uma aplicação IA em C ou C++ com OpenMP, e a mesma aplicação em CUDA.
+
+O grupo deve implementar 3 versões paralelas do código:
+
+i) OpenMP para multicore (CPU);
+
+ii) OpenMP para GPU;
+
+e iii) CUDA para GPU.
+
+O grupo deve medir o tempo de execução para cada uma das versões, além da versão sequencial e documentar em um arquivo readme.txt. As versões devem apresentar speedup escalável em relação a versão sequencial. 
+
+A aplicação deve pertencer a uma das três categorias de técnicas de inteligência artificial: árvore de decisão (ex: ID3), agrupamento (ex: K-Means) ou rede neural (ex: perceptron multicamadas). 
+
+Por exemplo, neste repositório você pode encontrar 4 algoritmos de Machine Learning escritos em c
+
+Links to an external site.
+
+Requisitos:
+
+i) o grupo deve utilizar uma base de dados de entrada real que demande no mínimo 10 segundos de tempo de execução no servidor de teste (computador pessoal ou PARCODE) (versão sequencial)
+
+ii) a versão sequencial não precisa ser desenvolvida, ou seja, pode-se utilizar um código aberto disponível, desde que um link para o código seja disponibilizado
+
+iii) o grupo deve deixar comentado no código as mudanças realizadas para a paralelização do código
+
+iv) o grupo deve deixar comentado no início do código, os tempos de execução da versão sequencial e paralela para 1, 2, 4 e 8, 16 e 32 threads em CPU (OpenMP).
+
+v) o grupo deve criar um readme.txt contendo instruções de como o código deve ser compilado e executado, além de uma explicação sobre a aplicação.
+
+vi) o grupo não precisa necessariamente testar diferentes tamanhos de kernels em CUDA.
+
+
+
+## Foi escolhido o Kmeans, está disponível em k_means_clustering.c e o data-set em instagram_visits_clustering.csv (https://www.kaggle.com/datasets/mitgandhi10/dataset-for-kmeans-clustering?resource=download)

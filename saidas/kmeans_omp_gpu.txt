@@ -1,0 +1,9 @@
+K-Means OpenMP (GPU - target)
+Observações efetivas: 2600000, clusters: 5
+Tempo total (OpenMP GPU, 30 execuções): 6.738000 segundos
+Tempo médio por execução: 0.224600 segundos
+Cluster 0: centroid (79.6150, 85.0245), pontos=600000
+Cluster 1: centroid (89.2579, 19.9635), pontos=791000
+Cluster 2: centroid (39.2714, 65.2616), pontos=398000
+Cluster 3: centroid (60.0064, 19.7425), pontos=311000
+Cluster 4: centroid (23.9540, 24.9721), pontos=500000

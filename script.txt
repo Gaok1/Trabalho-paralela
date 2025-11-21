@@ -1,0 +1,221 @@
+Roteiro de Apresentação – Trabalho de Paralelização (K-Means)
+=============================================================
+
+1) Apresentação e contexto
+--------------------------
+- Apresentante(s): [dizer nome(s) do grupo].
+- Disciplina: Programação Paralela / Computação de Alto Desempenho.
+- Tema do trabalho: paralelização de um algoritmo de Inteligência Artificial.
+- Algoritmo escolhido: **K-Means** (agrupamento / clustering).
+- Linguagens e tecnologias usadas:
+  - C (versão sequencial);
+  - OpenMP para CPU (multicore);
+  - OpenMP com offload para GPU;
+  - CUDA para GPU.
+- Base de dados: **Instagram_visits_clustering.csv** (Kaggle) – dados reais de:
+  - ID de usuário;
+  - Instagram visit score;
+  - Spending_rank (0 a 100).
+
+
+2) Explicação rápida do K-Means
+-------------------------------
+- Problema que o K-Means resolve:
+  - Dado um conjunto de pontos, queremos agrupá-los em **k clusters**;
+  - Cada cluster é representado por um **centróide**;
+  - Cada ponto pertence ao cluster cujo centróide está mais próximo.
+- Passos principais do algoritmo:
+  1. Inicializar os grupos de forma aleatória (cada ponto recebe um cluster);
+  2. Calcular os centróides (média das coordenadas de cada cluster);
+  3. Reatribuir cada ponto ao centróide mais próximo;
+  4. Repetir passos 2 e 3 até convergir (poucos pontos mudando de cluster).
+- No nosso caso, cada ponto é 2D:
+  - `x` = Instagram visit score;
+  - `y` = Spending_rank.
+
+
+3) Versão sequencial (`k_means_clustering.c`)
+---------------------------------------------
+**O que foi feito**
+- Utilizamos como base o código aberto de K-Means do repositório TheAlgorithms/C.
+- Adaptamos para:
+  - Ler o arquivo real `Instagram_visits_clustering.csv`;
+  - Transformar as colunas (score, spending_rank) em pontos 2D;
+  - Executar o K-Means sobre esses pontos.
+
+**Como foi feito**
+- Leitura do CSV:
+  - Ignoramos o cabeçalho;
+  - Para cada linha, lemos score e spending_rank e salvamos em um vetor de `observation`.
+- Para atender ao requisito de tempo (≥ 10 s):
+  - Replicamos a base em memória com um `REPLICATION_FACTOR = 1000` (aumentando para 2.600.000 pontos);
+  - Executamos o K-Means `NUM_RUNS = 30` vezes sobre essa base;
+  - Medimos o tempo total e o tempo médio por execução.
+- A função `kMeans` faz:
+  - Inicialização aleatória dos grupos;
+  - Laço de cálculo de centróides e reatribuição dos pontos até estabilizar.
+
+**Por que foi feito assim**
+- O enunciado exige:
+  - Um dataset **real**;
+  - Tempo de execução da versão sequencial de pelo menos ~10 s no ambiente de teste.
+- Em vez de inventar dados sintéticos, usamos o dataset real e aumentamos a carga **em memória**, mantendo as proporções dos dados originais.
+
+**Resultados (médias por execução, com 2.600.000 pontos e 30 execuções)**
+- Versão sequencial (`kmeans_seq`):
+  - Tempo médio ≈ **0,451 s** por execução;
+  - Tempo total ≈ **13,5 s**;
+  - Clusters fazem sentido com base nos dados (agrupando perfis de visitas/gasto).
+
+
+4) Versão OpenMP para CPU (`k_means_clustering_omp_cpu.c`)
+----------------------------------------------------------
+**O que foi feito**
+- Paralelizamos o K-Means para rodar em múltiplos núcleos de CPU usando OpenMP.
+- Medimos o tempo para 1, 2, 4, 8, 16 e 32 threads.
+
+**Como foi feito (principais mudanças)**
+- Mantivemos a mesma leitura de CSV e a mesma replicação/NUM_RUNS da versão sequencial.
+- Na função `kMeans_omp`:
+  - Etapa de acumular somas por cluster (cálculo dos centróides):
+    - Criamos buffers locais por thread (somatórios locais de x, y e contagem);
+    - Cada thread acumula em seu próprio vetor e, ao final, combinamos tudo
+      (reduzindo contenção em atomics);
+  - Etapa de reatribuição dos pontos aos centróides:
+    - Laço paralelo com `#pragma omp parallel for` e `reduction` para contar mudanças.
+- O código original sequencial foi preservado na lógica, apenas paralelizado.
+
+**Por que foi feito assim**
+- A versão paralela precisava ser o mais próxima possível da sequencial
+  para facilitar comparação de speedup;
+- A paralelização da etapa de reatribuição é natural, pois cada ponto pode ser
+  processado independentemente;
+- O uso de buffers locais por thread evita a sobrecarga de muitos `atomic`,
+  melhorando a escalabilidade quando aumentamos o número de threads.
+
+**Resultados (médias por execução, mesma configuração da sequencial)**
+- Versão OpenMP CPU (`kmeans_omp_cpu`):
+  - 1 thread : ~0,374 s  (speedup ~1,2× vs sequencial);
+  - 2 threads: ~0,318 s  (speedup ~1,4×);
+  - 4 threads: ~0,213 s  (speedup ~2,1×);
+  - 8 threads: ~0,179 s  (speedup ~2,5×);
+  - 16 threads: ~0,194 s (speedup ~2,3×);
+  - 32 threads: ~0,177 s (speedup ~2,5×).
+- Comentário: o speedup é mais claro até 8 threads; acima disso, a sobrecarga de
+  sincronização e memória começa a limitar o ganho, o que é esperado.
+
+
+5) Versão OpenMP para GPU (`k_means_clustering_omp_gpu.c`)
+----------------------------------------------------------
+**O que foi feito**
+- Utilizamos **OpenMP target** para offload da parte mais pesada do algoritmo para a GPU.
+- A lógica geral continua a mesma:
+  - Cálculo dos centróides na CPU;
+  - Reatribuição dos pontos na GPU.
+
+**Como foi feito (principais mudanças)**
+- Leitura do dataset e replicação são iguais às versões anteriores.
+- Separação dos dados em vetores simples (`x[]`, `y[]`, `groups[]`) por eficiência na GPU.
+- Função `kMeans_omp_gpu`:
+  - CPU recalcula centróides (somando pontos por cluster);
+  - GPU recebe os dados via `#pragma omp target` e faz:
+    - Para cada ponto, calcula a distância para todos os centróides;
+    - Atualiza o grupo do ponto e conta quantas mudanças ocorreram.
+- Usamos a mesma condição de parada (número de pontos que mudam de cluster
+  menor que o mínimo aceitável).
+
+**Por que foi feito assim**
+- OpenMP target permite reaproveitar o código em C com diretivas, sem escrever kernels CUDA manualmente;
+- Mantemos a comparabilidade com a versão seq./CPU (mesma função objetivo,
+  mesmo critério de parada e mesmo dataset replicado);
+- Cálculo de distâncias ponto–centróide é altamente paralelizável e se beneficia da GPU.
+
+**Resultados (médias por execução)**
+- Versão OpenMP GPU (`kmeans_omp_gpu`):
+  - Tempo médio ≈ **0,225 s** por execução;
+  - Speedup ≈ **2,0×** em relação à versão sequencial.
+
+
+6) Versão CUDA para GPU (`k_means_clustering_cuda.cu`)
+------------------------------------------------------
+**O que foi feito**
+- Implementamos uma versão de K-Means em CUDA, compilada com `nvcc` e executada em GPU.
+- A parte paralela foi escrita explicitamente como kernel CUDA.
+
+**Como foi feito (principais mudanças)**
+- Reaproveitamos a mesma leitura de CSV e replicação do dataset (REPLICATION_FACTOR e NUM_RUNS).
+- Separação dos dados em arrays `x[]`, `y[]`, `groups[]` na CPU e cópia para GPU.
+- Kernel `assign_clusters_kernel`:
+  - Cada thread processa um ponto;
+  - Calcula a distância dele para todos os centróides;
+  - Decide a qual cluster pertence;
+  - Usa `atomicAdd` para contar quantos pontos mudaram de cluster.
+- A cada iteração:
+  - CPU recalcula centróides com base nas atribuições mais recentes;
+  - Copiamos centróides para GPU e chamamos o kernel novamente;
+  - Paramos quando o número de mudanças fica abaixo do limite.
+- Medição de tempo:
+  - Utilizamos `cudaEvent_t` (`cudaEventRecord` e `cudaEventElapsedTime`)
+    para medir o tempo total e obter o tempo médio por execução.
+
+**Por que foi feito assim**
+- Atende diretamente ao requisito de ter a **mesma aplicação em CUDA**;
+- Focamos na etapa mais custosa (atribuição dos pontos), que é altamente paralela;
+- O uso de eventos CUDA fornece uma medida de tempo mais precisa dentro da GPU.
+
+**Resultados (médias por execução)**
+- Versão CUDA (`kmeans_cuda`, via WSL + CUDA 12):
+  - Tempo médio ≈ **0,349 s** por execução;
+  - Speedup ≈ **1,3×** em relação à versão sequencial.
+- Comentário: o ganho depende da GPU e da configuração de WSL; em máquinas
+  diferentes, o speedup da CUDA pode ser maior.
+
+
+7) Comparação geral e conclusões
+--------------------------------
+**Comparação de tempos médios (mesma configuração de testes)**
+- Sequencial (1 thread): ~0,451 s  (referência 1,0×);
+- OpenMP CPU:
+  - Melhora significativa até 8 threads (~2,5× de speedup);
+- OpenMP GPU:
+  - ~0,225 s (≈ 2,0× mais rápido que a sequencial);
+- CUDA:
+  - ~0,349 s (≈ 1,3× mais rápido que a sequencial nesta máquina).
+
+**Pontos principais para falar na conclusão**
+- Cumprimos os requisitos do enunciado:
+  - uma versão sequencial em C baseada em código aberto (link no cabeçalho);
+  - 3 versões paralelas: OpenMP CPU, OpenMP GPU e CUDA;
+  - uso de base real e tempo ≥ 10 s na versão sequencial, obtido via replicação;
+  - comentários no código indicando mudanças de paralelização e tempos medidos.
+- Do ponto de vista de desempenho:
+  - OpenMP CPU escala razoavelmente bem até 8 threads;
+  - OpenMP GPU e CUDA mostram speedup em relação à versão sequencial, com
+    variação dependendo do ambiente de GPU;
+  - A paralelização mais eficiente em CPU veio da combinação de OpenMP com
+    buffers locais por thread para reduzir contenção.
+- Próximos passos (se fosse evoluir o projeto):
+  - Experimentar diferentes valores de `k` e critérios de parada;
+  - Ajustar melhor a granularidade e o uso de memória na GPU;
+  - Comparar versões com diferentes tamanhos de blocos (CUDA) e configurações de target (OpenMP).
+
+
+8) Sugestão de estrutura de fala
+--------------------------------
+- Início (1–2 min):
+  - Apresentar o grupo, o tema (K-Means) e o dataset real.
+- Parte 1 – Algoritmo e versão sequencial (3–4 min):
+  - Explicar K-Means rapidamente;
+  - Mostrar como a versão sequencial foi construída e por que replicamos os dados.
+- Parte 2 – OpenMP CPU (3–4 min):
+  - Mostrar as principais diretivas (`parallel for`, buffers locais);
+  - Comentar os speedups obtidos e até onde escala bem.
+- Parte 3 – OpenMP GPU e CUDA (4–5 min):
+  - Explicar a ideia de offload com OpenMP target;
+  - Explicar o kernel CUDA e a medição com eventos;
+  - Comparar tempos GPU vs CPU.
+- Fechamento (2–3 min):
+  - Revisar se todos os requisitos do enunciado foram atendidos;
+  - Destacar os principais ganhos de desempenho;
+  - Comentar possíveis melhorias futuras.
+
