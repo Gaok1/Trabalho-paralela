@@ -29,9 +29,6 @@ A base de dados utilizada é real, obtida do Kaggle:
 - `Instagram_visits_clustering.csv`  
   Base de dados real utilizada em todas as versões.
 
-- `instructions.txt`  
-  Especificação do trabalho.
-
 - Pasta `executaveis/`  
   Binários gerados (seq., OpenMP CPU, OpenMP GPU, CUDA).
 
