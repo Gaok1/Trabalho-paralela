@@ -57,26 +57,11 @@ gcc k_means_clustering_omp_gpu.c -O2 -o kmeans_omp_gpu -fopenmp -lm
 # Versão CUDA (em ambiente com nvcc)
 nvcc k_means_clustering_cuda.cu -o kmeans_cuda
 ```
-
-No Windows + WSL (Ubuntu), o código CUDA foi compilado com:
-
-```bash
-cd /mnt/g/Paralela-trab
-nvcc k_means_clustering_cuda.cu -o executaveis/kmeans_cuda
-```
-
 ---
 
-## Como executar
+## Execução
 
 Sempre executar a partir da pasta onde está o CSV:
-
-```bash
-./kmeans_seq           # versão sequencial
-./kmeans_omp_cpu       # versão OpenMP CPU
-./kmeans_omp_gpu       # versão OpenMP GPU (offload)
-./kmeans_cuda          # versão CUDA
-```
 
 Cada programa imprime:
 - número de observações efetivas e de clusters;
@@ -88,25 +73,6 @@ Os logs já gerados estão em `saidas/`:
 - `kmeans_omp_cpu.txt`
 - `kmeans_omp_gpu.txt`
 - `kmeans_cuda_wsl.txt`
-
----
-
-## Descrição da aplicação
-A implementação do algoritmo K-means está disponível no repositório: https://github.com/TheAlgorithms/C/tree/master/machine_learning.
-
-O grupo fez uma pequena adaptação para utilizar dados do csv e replicação de cálculo para extender o tempo de execução.
-
-Passos principais do algoritmo:
-1. Leitura do CSV `Instagram_visits_clustering.csv`;
-2. Construção do vetor de observações (`observation { x, y, group }`);
-3. Inicialização aleatória dos grupos;
-4. Loop:
-   - cálculo dos centróides de cada cluster;
-   - reatribuição de cada ponto ao centróide mais próximo;
-   - parada quando poucas observações mudam de cluster (erro mínimo).
-
-As versões paralelas aceleram principalmente a etapa de reatribuição
-dos pontos (laços sobre todas as observações).
 
 ---
 
@@ -150,50 +116,3 @@ Os valores exatos podem ser conferidos nos arquivos:
 - `saidas/kmeans_omp_gpu.txt`
 - `saidas/kmeans_cuda_wsl.txt`
 
----
-
-## Relação com os requisitos do `instructions.txt`
-
-Requisitos principais:
-
-1. **Versão sequencial em C/C++ com OpenMP e versão CUDA**  
-   - Versão sequencial em C: `k_means_clustering.c`  
-   - Versão OpenMP CPU: `k_means_clustering_omp_cpu.c`  
-   - Versão OpenMP GPU: `k_means_clustering_omp_gpu.c`  
-   - Versão CUDA: `k_means_clustering_cuda.cu`
-
-2. **Três versões paralelas**  
-   - (i) OpenMP para multicore (CPU) – implementado.  
-   - (ii) OpenMP para GPU – implementado via `target` (offload).  
-   - (iii) CUDA para GPU – implementado e testado via WSL.
-
-3. **Medir tempo de execução e documentar em `readme.txt`**  
-   - Tempos medidos com base real replicada estão registrados em:
-     - `readme.txt` (seção “Tempos de execução medidos”)  
-     - `saidas/*.txt` com os logs completos.
-
-4. **Speedup escalável em relação à versão sequencial**  
-   - OpenMP CPU apresenta speedup crescente até ~8 threads (~2,5×).  
-   - OpenMP GPU e CUDA também apresentam speedup em relação à versão sequencial.
-
-5. **Aplicação de IA (K-Means – agrupamento)**  
-   - K-Means é um algoritmo de agrupamento, conforme pedido no enunciado.
-
-6. **Uso de base de dados real com ≥ 10 s na versão sequencial**  
-   - Base real: `Instagram_visits_clustering.csv` (Kaggle).  
-   - Através de replicação em memória e múltiplas execuções, obtivemos ~13,5 s
-     de tempo total na versão sequencial.
-
-7. **Comentar mudanças de paralelização no código**  
-   - `k_means_clustering_omp_cpu.c`   : blocos marcados com `[PARALELO]`.  
-   - `k_means_clustering_omp_gpu.c`   : blocos marcados com `[PARALELO-OMP-GPU]`.  
-   - `k_means_clustering_cuda.cu`     : blocos marcados com `[PARALELO-CUDA]`.
-
-8. **Comentar no início do código os tempos de execução**  
-   - Cabeçalhos de `k_means_clustering.c`, `k_means_clustering_omp_cpu.c`,
-     `k_means_clustering_omp_gpu.c` e `k_means_clustering_cuda.cu` agora
-     incluem os tempos médios medidos (aproximados) para cada configuração.
-
-Com isso, o projeto está pronto para entrega, com código sequencial e paralelo,
-tempos medidos de forma empírica, e documentação em `readme.txt` e `readme.md`
-conforme o enunciado.
